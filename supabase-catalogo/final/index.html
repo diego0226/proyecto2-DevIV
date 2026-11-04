@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de productos · Supabase</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #f3f6f5;
+      color: #1b2622;
+    }
+    main {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    h1 { margin: 0; font-size: 28px; }
+    .subtitulo { margin: 4px 0 0; color: #5a6a63; }
+    .tarjeta {
+      background: #fff;
+      border: 1px solid #d8e0dc;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    h2 { margin: 0 0 14px; font-size: 18px; }
+    form { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #5a6a63; }
+    input, select, button { font: inherit; padding: 8px 10px; border: 1px solid #c4cfca; border-radius: 6px; }
+    button { background: #0f7a55; color: #fff; border-color: #0f7a55; font-weight: 600; cursor: pointer; }
+    button:hover { background: #0b6345; }
+    .barra { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .barra h2 { margin: 0; }
+    .barra label { flex-direction: row; align-items: center; gap: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e3e9e6; }
+    th { font-size: 13px; color: #5a6a63; }
+    td.precio { font-variant-numeric: tabular-nums; }
+    .categoria { background: #e2f2ea; color: #0f7a55; border-radius: 99px; padding: 2px 10px; font-size: 13px; font-weight: 600; }
+    .vacio { color: #5a6a63; text-align: center; padding: 24px; }
+    #mensaje { display: none; padding: 12px 14px; border-radius: 8px; background: #fdecea; color: #8a1f11; border: 1px solid #f3b7ae; }
+    #mensaje.visible { display: block; }
+    @media (max-width: 640px) { form { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Catálogo de productos</h1>
+      <p class="subtitulo">Datos guardados en una base de datos PostgreSQL de Supabase</p>
+    </header>
+
+    <div id="mensaje"></div>
+
+    <section class="tarjeta">
+      <h2>Agregar producto</h2>
+      <form id="formulario">
+        <label>Nombre
+          <input name="nombre" required placeholder="Producto de Ana">
+        </label>
+        <label>Precio (₡)
+          <input name="precio" type="number" min="0" step="0.01" required placeholder="1500">
+        </label>
+        <label>Categoría
+          <select name="categoria">
+            <option>Bebidas</option>
+            <option>Comidas</option>
+            <option>Postres</option>
+            <option>Otros</option>
+          </select>
+        </label>
+        <button type="submit">Agregar</button>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      <div class="barra">
+        <h2>Productos (<span id="total">0</span>)</h2>
+        <label>Filtrar
+          <select id="filtro">
+            <option>Todas</option>
+            <option>Bebidas</option>
+            <option>Comidas</option>
+            <option>Postres</option>
+            <option>Otros</option>
+          </select>
+        </label>
+      </div>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Categoría</th></tr>
+        </thead>
+        <tbody id="cuerpo-tabla">
+          <tr><td colspan="4" class="vacio">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Librería de Supabase desde un CDN: crea la variable global "supabase" -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    // ===== PASO 4: datos de conexión (Supabase → Connect o Project Settings → API Keys) =====
+    const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
+    const SUPABASE_KEY = 'pegar-aquí-la-publishable-key';
+
+    // No se llama "supabase" porque ese nombre ya lo usa la librería
+    const cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const formulario = document.getElementById('formulario');
+    const selectCategoria = document.getElementById('filtro');
+
+    // ===== PASO 5 y PASO 7: consultar los productos (con filtro opcional) =====
+    async function cargarProductos() {
+      let consulta = cliente
+        .from('productos')
+        .select('*')
+        .order('id');
+
+      if (selectCategoria.value !== 'Todas') {
+        consulta = consulta.eq('categoria', selectCategoria.value);
+      }
+
+      const { data, error } = await consulta;
+
+      if (error) { mostrarError(error); return; }
+      pintarTabla(data);
+    }
+
+    // ===== PASO 6: insertar un producto =====
+    async function agregarProducto(evento) {
+      evento.preventDefault();
+      const nuevo = {
+        nombre: formulario.nombre.value,
+        precio: Number(formulario.precio.value),
+        categoria: formulario.categoria.value
+      };
+
+      const { error } = await cliente.from('productos').insert(nuevo);
+
+      if (error) { mostrarError(error); return; }
+      formulario.reset();
+      cargarProductos();
+    }
+
+    // ===== Funciones de apoyo (no tienen que ver con Supabase) =====
+    const formatoColones = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' });
+
+    function pintarTabla(productos) {
+      ocultarError();
+      const cuerpo = document.getElementById('cuerpo-tabla');
+      document.getElementById('total').textContent = productos.length;
+      cuerpo.innerHTML = '';
+
+      if (productos.length === 0) {
+        cuerpo.innerHTML = '<tr><td colspan="4" class="vacio">No hay productos. Si en Supabase sí hay datos, revisa las políticas RLS.</td></tr>';
+        return;
+      }
+
+      for (const p of productos) {
+        const fila = document.createElement('tr');
+        const celdas = [p.id, p.nombre, formatoColones.format(p.precio), p.categoria];
+        celdas.forEach((valor, i) => {
+          const td = document.createElement('td');
+          if (i === 2) td.className = 'precio';
+          if (i === 3) {
+            const etiqueta = document.createElement('span');
+            etiqueta.className = 'categoria';
+            etiqueta.textContent = valor;
+            td.appendChild(etiqueta);
+          } else {
+            td.textContent = valor;
+          }
+          fila.appendChild(td);
+        });
+        cuerpo.appendChild(fila);
+      }
+    }
+
+    function mostrarError(error) {
+      const caja = document.getElementById('mensaje');
+      let texto = 'Error: ' + (error.message || error);
+      if (/row-level security/i.test(texto)) {
+        texto += ' → Falta una política RLS. Ejecuta el archivo sql/01_crear_tabla.sql.';
+      } else if (/api key|jwt|401/i.test(texto)) {
+        texto += ' → Revisa SUPABASE_KEY (paso 4).';
+      } else if (/failed to fetch/i.test(texto)) {
+        texto += ' → Revisa SUPABASE_URL (paso 4) y tu conexión a internet.';
+      }
+      caja.textContent = texto;
+      caja.classList.add('visible');
+      console.error(error);
+    }
+
+    function ocultarError() {
+      document.getElementById('mensaje').classList.remove('visible');
+    }
+
+    formulario.addEventListener('submit', agregarProducto);
+    selectCategoria.addEventListener('change', cargarProductos);
+
+    if (SUPABASE_URL.includes('xxxxxxxx')) {
+      mostrarError('Todavía no has pegado la URL y la key de tu proyecto (paso 4).');
+      document.getElementById('cuerpo-tabla').innerHTML = '<tr><td colspan="4" class="vacio">Sin conexión</td></tr>';
+    } else {
+      cargarProductos();
+    }
+  </script>
+</body>
+</html>
