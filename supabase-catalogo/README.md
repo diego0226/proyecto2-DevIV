@@ -8,7 +8,9 @@ Es una página web que guarda y muestra productos en una base de datos PostgreSQ
 - **insertar** un producto nuevo desde un formulario;
 - **filtrar** los productos por categoría.
 
-Repositorio: `[LINK DEL REPO]`
+Repositorio: https://github.com/diego0226/proyecto2-DevIV (los archivos de la práctica están en la carpeta `supabase-catalogo`)
+
+Para descargarlo sin Git: en GitHub, botón verde **Code → Download ZIP**, descomprimir y abrir la carpeta `supabase-catalogo`.
 
 ## Requisitos
 
@@ -36,11 +38,20 @@ supabase-catalogo/
 
 ## Cómo ejecutarlo
 
+### Versión rápida: abrir `final/index.html`
+
+`final/index.html` ya está conectado al proyecto del grupo en Supabase (`catalogo-grupo6`). Basta con hacerle doble clic para ver el catálogo funcionando, sin crear cuenta ni configurar nada. Durante la práctica guiada sirve de respaldo para quien no logre crear su propio proyecto.
+
+La key que aparece en ese archivo es la *publishable key*, que Supabase permite publicar: la página solo puede leer e insertar productos, nada más.
+
+### Con un proyecto propio (lo que se hace en la práctica)
+
 ### 1. Crear el proyecto en Supabase
 
 1. Entrar a https://supabase.com/dashboard y hacer clic en **New project**.
-2. Nombre: `practica-supabase`. En *Database Password* hacer clic en **Generate a password**. Región: la de Estados Unidos más cercana.
-3. Clic en **Create new project** y esperar 1–2 minutos a que termine.
+2. Nombre: `practica-supabase`. En *Database Password* hacer clic en **Generate a password**. Región: **Americas**, la que aparece por defecto.
+3. En *Security* dejar marcada **Enable Data API**. **Automatically expose new tables** puede quedar como venga: el script incluye el `grant`, así que funciona en los dos casos.
+4. Clic en **Create new project** y esperar 1–2 minutos a que termine.
 
 ### 2. Crear la tabla
 
@@ -50,9 +61,9 @@ supabase-catalogo/
 
 ### 3. Conectar la página
 
-1. En Supabase hacer clic en **Connect** (arriba) o ir a **Project Settings → API Keys**.
-2. Copiar la **Project URL** y la **publishable key** (si el proyecto muestra *anon key*, usar esa).
-3. Abrir `final/index.html` (o `practica/index.html`) en el editor y pegar los valores:
+1. La **Project URL** está en la página principal del proyecto, debajo del nombre, con un botón **Copy**. También es `https://<código-del-proyecto>.supabase.co`, donde el código es el que aparece en la barra de direcciones después de `/project/`.
+2. La **publishable key** está en **Project Settings → API Keys**, sección *Publishable key*, botón de copiar (si el proyecto muestra *anon key*, usar esa).
+3. Abrir `practica/index.html` en el editor y pegar los valores:
 
 ```js
 const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
@@ -125,7 +136,8 @@ pintarTabla(data);
 
 | Síntoma | Causa | Solución |
 |---|---|---|
-| La tabla dice "No hay productos" pero en Supabase sí hay datos | RLS activo sin política de lectura (pasa si se crea la tabla con clics) | Ejecutar las líneas `create policy` de `sql/01_crear_tabla.sql` |
+| `permission denied for table productos` (código 42501) | Falta el `grant`: desde el 30/10/2026 Supabase no da acceso automático a tablas nuevas | Ejecutar `grant select, insert on public.productos to anon;` |
+| La tabla dice "No hay productos" pero en Supabase sí hay datos | RLS activo sin política de lectura | Ejecutar las líneas `create policy` de `sql/01_crear_tabla.sql` |
 | `new row violates row-level security policy` | Falta la política de insertar | Igual que arriba |
 | `Identifier 'supabase' has already been declared` | Se llamó `supabase` a la variable; ese nombre ya lo usa la librería | Usar `cliente` |
 | `Invalid API key` | Key mal copiada o con espacios | Volver a copiar la publishable/anon key |
@@ -136,6 +148,6 @@ pintarTabla(data);
 
 ## Integrantes
 
-- [Nombre 1]
-- [Nombre 2]
-- [Nombre 3]
+- Diego Zamora Arce C5L139
+- Rafael Porras Rakow C5I449
+- Jered Arias Avila C5C706

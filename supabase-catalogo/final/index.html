@@ -107,8 +107,10 @@
 
   <script>
     // ===== PASO 4: datos de conexión (Supabase → Connect o Project Settings → API Keys) =====
-    const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
-    const SUPABASE_KEY = 'pegar-aquí-la-publishable-key';
+    // Esta versión está conectada al proyecto del grupo 6 (catalogo-grupo6).
+    // La publishable key se puede publicar: solo permite lo que dejan los grant y las políticas RLS.
+    const SUPABASE_URL = 'https://byqsoufzoicriwlciyqk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_EkRC0Njuz8XXDBjAFnEsMA_iI_YXF82';
 
     // No se llama "supabase" porque ese nombre ya lo usa la librería
     const cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -186,7 +188,9 @@
     function mostrarError(error) {
       const caja = document.getElementById('mensaje');
       let texto = 'Error: ' + (error.message || error);
-      if (/row-level security/i.test(texto)) {
+      if (/permission denied/i.test(texto)) {
+        texto += " → Falta el grant. Ejecuta: grant select, insert on public.productos to anon;";
+      } else if (/row-level security/i.test(texto)) {
         texto += ' → Falta una política RLS. Ejecuta el archivo sql/01_crear_tabla.sql.';
       } else if (/api key|jwt|401/i.test(texto)) {
         texto += ' → Revisa SUPABASE_KEY (paso 4).';

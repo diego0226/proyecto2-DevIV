@@ -13,7 +13,13 @@ create table productos (
   categoria text not null
 );
 
--- 2. Seguridad: activar RLS (Row Level Security)
+-- 2. Dar permiso a la página (rol "anon") para leer e insertar en la tabla.
+--    Desde el 30 de octubre de 2026 Supabase ya no expone las tablas nuevas a la API
+--    de forma automática: sin este grant la página recibe el error 42501
+--    "permission denied for table productos".
+grant select, insert on public.productos to anon;
+
+-- 3. Seguridad: activar RLS (Row Level Security)
 --    Con RLS activo nadie puede leer ni escribir hasta que una política lo permita.
 alter table productos enable row level security;
 
@@ -26,11 +32,11 @@ create policy "Leer productos" on productos
 create policy "Agregar productos" on productos
   for insert to anon with check (true);
 
--- 3. Datos de ejemplo (precios en colones)
+-- 4. Datos de ejemplo (precios en colones)
 insert into productos (nombre, precio, categoria) values
   ('Café chorreado', 1200, 'Bebidas'),
   ('Gallo pinto',    2500, 'Comidas'),
   ('Tres leches',    1800, 'Postres');
 
--- 4. Consulta de prueba: el resultado aparece abajo del editor
+-- 5. Consulta de prueba: el resultado aparece abajo del editor
 select * from productos where categoria = 'Bebidas';

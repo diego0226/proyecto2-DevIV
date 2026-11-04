@@ -168,7 +168,9 @@
     function mostrarError(error) {
       const caja = document.getElementById('mensaje');
       let texto = 'Error: ' + (error.message || error);
-      if (/row-level security/i.test(texto)) {
+      if (/permission denied/i.test(texto)) {
+        texto += " → Falta el grant. Ejecuta: grant select, insert on public.productos to anon;";
+      } else if (/row-level security/i.test(texto)) {
         texto += ' → Falta una política RLS. Ejecuta el archivo sql/01_crear_tabla.sql.';
       } else if (/api key|jwt|401/i.test(texto)) {
         texto += ' → Revisa SUPABASE_KEY (paso 4).';
